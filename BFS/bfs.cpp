@@ -7,7 +7,7 @@
 //Programa BFS con uso directo de la representacion de la matriz
 
 std::vector<std::pair<int, int>> get_neighbors(int i, int j, int rows, int cols){
-
+  
   std::vector<std::pair<int,int>> neighbors;
   
   if (i > 0) neighbors.push_back(std::make_pair(i-1, j));
@@ -48,6 +48,8 @@ void bfs(){
 
   std::queue<std::pair<int,int>> q;
   q.push(inicio_xy);
+
+  
   
   while(!q.empty()){
     std::pair<int,int> node = q.front();
@@ -65,8 +67,6 @@ void bfs(){
     }
     
   }
-
-  
   
 }
 
