@@ -7,6 +7,7 @@
 
 //Programa BFS con uso directo de la representacion de la matriz
 
+//cuatro conectividad
 std::vector<std::pair<int, int>> get_neighbors(int i, int j, int rows, int cols){
   
   std::vector<std::pair<int,int>> neighbors;
@@ -21,33 +22,35 @@ std::vector<std::pair<int, int>> get_neighbors(int i, int j, int rows, int cols)
 }
 
 //IMPRIMIR el arreglo para ver la animacion
-void print_dist(int rows, int cols, std::vector<int>& distance){
-  usleep(1000);
+void print_dist(std::vector<std::vector<char>> grid){
+  usleep(10000);
   system("clear");
-  for (int i = 0; i < rows; i++){
-    for (int j = 0; j < cols; j++){
-      int u = i*cols + j;
-      if (distance[u] == -1){
+  int val;
+  //imprimir y salir
+  for(int i=0;i<grid.size();i++){
+    for(int j = 0; j<grid[i].size();j++){
+      val = grid[i][j] - '0';
+      if (val == -13){
 	std::cout << "  # ";
-      } else {
-	//poner distancias fancy
-	if(std::to_string(distance[u]).length() == 1){
-	  std::cout << " " << distance[u] << " ";
-	}else {
-	  std::cout << " " << distance[u] << " ";
+      }else{
+	if(std::to_string(val).length()==1){
+	  std::cout << "  " << val << " ";
+	}else{
+	  std::cout << " " << val << " ";
 	}
+	
       }
     }
-    std::cout << std::endl;
+    std::cout<<std::endl;
   }
 }
 
-void bfs(std::pair<int,int>& inicio, std::pair<int,int>& fin,int rows,int cols, std::vector<std::vector<char>> grid){
+void bfs(std::pair<int,int>& inicio, std::pair<int,int>& fin,int rows,int cols, std::vector<std::vector<char>> &grid){
   
   //indices de la celda en la matriz
   std::queue<std::pair<int,int>> q;
   q.push(inicio);
-
+  grid[inicio.first][inicio.second] = '1';
   bool primera = true;
   
   while(!q.empty()){
@@ -56,11 +59,7 @@ void bfs(std::pair<int,int>& inicio, std::pair<int,int>& fin,int rows,int cols, 
 
     int x = node.first;
     int y = node.second;
-
-    std::cout << "-NODO-VALUE-" << std::endl;
-    std::cout <<   grid[x][y]   << " " << std::endl;
-    std::cout << "------------" << std::endl;
-    
+        
     q.pop();
 
     //obtener posiciones
@@ -69,32 +68,17 @@ void bfs(std::pair<int,int>& inicio, std::pair<int,int>& fin,int rows,int cols, 
     
     // imprimir los vecinos
     for (const auto& pair : neighbors) {
-      std::cout << "(" << pair.first << ", " << pair.second << ")";
-      std::cout << " -> " << grid[pair.first][pair.second] << std::endl;
+      //std::cout << "(" << pair.first << ", " << pair.second << ")";
+      //std::cout << " -> " << grid[pair.first][pair.second] << std::endl;
       
-      //si el valor no es una pared # hacer
-      if(grid[pair.first][pair.second] == '#'){
-	
-	//imprimir y salir
-	for(int i=0;i<grid.size();i++){
-	  for(int j = 0; j<grid[i].size();j++){
-	    std::cout << grid[i][j];
-	  }
-	  std::cout<<std::endl;
-	}
-	
-	exit(1);
-	
-      }else{
-	if(grid[pair.first][pair.second] == '0'){
-	  //respecto al pasado sumarle uno
-	  grid[pair.first][pair.second] = int(grid[x][y] + 1);
-	  q.push(pair);
-	}
+      if(grid[pair.first][pair.second] == '0'){
+	//respecto al pasado sumarle uno
+	grid[pair.first][pair.second] = int((grid[x][y]) + 1);
+	q.push(pair);
       }
-      primera = false;
     }
-    
+    //imprimir avance
+    print_dist(grid);
   }
 }
 
@@ -115,7 +99,8 @@ int main(){
 
   //Hacer la matriz del mapa
   std::vector<std::vector<char>> grid(rows, std::vector<char>(cols));
-
+  int num;
+    
   //construir la matriz
   for(int i=0;i<rows;i++){
     std::string line;
@@ -124,9 +109,7 @@ int main(){
     for(int j=0; j<cols;j++){
       grid[i][j] = line[j];
     }
-    
   }
-  
   for(int i=0;i<grid.size();i++){
     for(int j = 0; j<grid[i].size();j++){
       std::cout << grid[i][j];
@@ -134,8 +117,6 @@ int main(){
     std::cout<<std::endl;
   }
   
-  //print_dist(rows,cols);
-
   std::cin >> inicio_x >> inicio_y;
   std::cin >> fin_x >> fin_y;
   
@@ -147,4 +128,48 @@ int main(){
   
   bfs(inicio,fin,rows,cols,grid);
 
+  //buscar el camino mas corto
+  //revisar con los vecinos
+  
+  if(grid[fin_x][fin_y]-'0' == 0 ){
+    std::cout << "no solucion" << std::endl;
+  }else{
+    std::cout << "X: " << fin_x <<  " Y: " << fin_y << std::endl;
+    std::cout << grid[fin_x][fin_y]-'0' << std::endl;
+    
+    //buscar el camino con los vecinos
+    std::vector<std::pair<int, int>> neighbors;
+
+    //manejar un queue
+    std::queue<std::pair<int,int>> q_grad;
+
+    q_grad.push(std::make_pair(fin_x,fin_y));
+
+    int _max_ = 10000;
+    std::pair<int,int> max_pair;
+    max_pair = std::make_pair(fin_x,fin_y);
+    int aux = 0;
+    while(!q_grad.empty()){
+      
+      q_grad.pop();
+      // imprimir los vecinos
+      neighbors = get_neighbors(max_pair.first, max_pair.second, rows, cols);
+      
+      for (const auto& pair : neighbors) {
+	if(_max_ > grid[pair.first][pair.second] - '0' && grid[pair.first][pair.second] - '0' > -13){
+	  _max_ = grid[pair.first][pair.second] - '0';
+	  max_pair = pair;
+	}
+      }
+
+      std::cout << "(" << max_pair.first << ", " << max_pair.second << ")";
+      
+      std::cout << " -> " << grid[max_pair.first][max_pair.second]-'0' << std::endl;
+
+      if (grid[max_pair.first][max_pair.second]-'0' == 1)
+	exit(-1);
+      
+      q_grad.push(max_pair);
+    }
+  }
 }
