@@ -22,8 +22,8 @@ std::vector<std::pair<int, int>> get_neighbors(int i, int j, int rows, int cols)
 }
 
 //IMPRIMIR el arreglo para ver la animacion
-void print_dist(std::vector<std::vector<char>> grid){
-  usleep(10000);
+void print_dist(std::vector<std::vector<char>> grid, bool ruta){
+  usleep(20000);
   system("clear");
   int val;
   //imprimir y salir
@@ -33,12 +33,27 @@ void print_dist(std::vector<std::vector<char>> grid){
       if (val == -13){
 	std::cout << "  # ";
       }else{
-	if(std::to_string(val).length()==1){
-	  std::cout << "  " << val << " ";
+	if(ruta){
+	  if(std::to_string(val).length()==1){
+	    if(val == 0){
+	      std::cout << "  " << "*" << " ";
+	    }else{
+	      std::cout << "  " << val << " ";
+	    }
+	  }else{
+	    if(val == 0){
+	      std::cout << "  " << "*" << " ";
+	    }else{
+	      std::cout << " " << val << " ";
+	    }
+	  }
 	}else{
-	  std::cout << " " << val << " ";
+	  if(std::to_string(val).length()==1){
+	    std::cout << "  " << val << " ";
+	  }else{
+	    std::cout << " " << val << " ";
+	  }
 	}
-	
       }
     }
     std::cout<<std::endl;
@@ -78,7 +93,7 @@ void bfs(std::pair<int,int>& inicio, std::pair<int,int>& fin,int rows,int cols, 
       }
     }
     //imprimir avance
-    print_dist(grid);
+    print_dist(grid,false);
   }
 }
 
@@ -134,7 +149,7 @@ int main(){
   if(grid[fin_x][fin_y]-'0' == 0 ){
     std::cout << "no solucion" << std::endl;
   }else{
-    std::cout << "X: " << fin_x <<  " Y: " << fin_y << std::endl;
+    std::cout << "(" << fin_x <<  ", " << fin_y << ") -> ";
     std::cout << grid[fin_x][fin_y]-'0' << std::endl;
     
     //buscar el camino con los vecinos
@@ -142,34 +157,53 @@ int main(){
 
     //manejar un queue
     std::queue<std::pair<int,int>> q_grad;
+    std::queue<std::pair<int,int>> _q_;
 
     q_grad.push(std::make_pair(fin_x,fin_y));
+    _q_.push(std::make_pair(fin_x,fin_y));
 
     int _max_ = 10000;
     std::pair<int,int> max_pair;
     max_pair = std::make_pair(fin_x,fin_y);
-    int aux = 0;
+    
     while(!q_grad.empty()){
       
       q_grad.pop();
+      
       // imprimir los vecinos
       neighbors = get_neighbors(max_pair.first, max_pair.second, rows, cols);
       
       for (const auto& pair : neighbors) {
 	if(_max_ > grid[pair.first][pair.second] - '0' && grid[pair.first][pair.second] - '0' > -13){
 	  _max_ = grid[pair.first][pair.second] - '0';
+	  
 	  max_pair = pair;
 	}
+	
       }
-
+      
       std::cout << "(" << max_pair.first << ", " << max_pair.second << ")";
       
       std::cout << " -> " << grid[max_pair.first][max_pair.second]-'0' << std::endl;
 
-      if (grid[max_pair.first][max_pair.second]-'0' == 1)
-	exit(-1);
-      
-      q_grad.push(max_pair);
+      if (grid[max_pair.first][max_pair.second]-'0' == 1){
+	_q_.push(max_pair);
+	continue;
+	//print_dist(grid);
+	//exit(0);
+      }else{
+	q_grad.push(max_pair); //puede ser un aux
+	_q_.push(max_pair); 
+      }  
     }
+    
+    std::pair<int,int> ask;
+    while(!_q_.empty()){
+      ask = _q_.front();
+      grid[ask.first][ask.second] = '0';
+      print_dist(grid,true);
+      _q_.pop();
+    }
+    
   }
 }
