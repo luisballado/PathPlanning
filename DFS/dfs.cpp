@@ -23,7 +23,7 @@ std::vector<std::pair<int, int>> get_neighbors(int i, int j, int rows, int cols)
 
 //IMPRIMIR el arreglo para ver la animacion
 void print_dist(std::vector<std::vector<char>> grid, bool ruta){
-  usleep(20000);
+  usleep(5000);
   system("clear");
   int val;
   //imprimir y salir
@@ -178,8 +178,7 @@ int main(){
 	  _max_ = grid[pair.first][pair.second] - '0';
 	  
 	  max_pair = pair;
-	}
-	
+	}	
       }
       
       std::cout << "(" << max_pair.first << ", " << max_pair.second << ")";
@@ -204,6 +203,5 @@ int main(){
       print_dist(grid,true);
       _q_.pop();
     }
-    
   }
 }
