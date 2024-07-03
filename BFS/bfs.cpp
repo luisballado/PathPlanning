@@ -22,7 +22,7 @@ std::vector<std::pair<int, int>> get_neighbors(int i, int j, int rows, int cols)
 
 //IMPRIMIR el arreglo para ver la animacion
 void print_dist(std::vector<std::vector<char>> grid, bool ruta){
-  usleep(800);
+  usleep(8000);
   system("clear");
   int val;
   //imprimir y salir
@@ -70,7 +70,7 @@ void bfs(std::pair<int,int>& inicio, std::pair<int,int>& fin,int rows,int cols, 
   grid[inicio.first][inicio.second] = '1';
     
   while(!q.empty()){
-
+    
     //tomamos el primer elemento de la cola
     std::pair<int,int> node = q.front();
 

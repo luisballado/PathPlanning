@@ -7,6 +7,7 @@
 #include <stack>
 
 #include <list>
+#include <set>
 
 //Programa DFS con uso directo de la representacion de la matriz
 
@@ -26,11 +27,12 @@ std::vector<std::pair<int, int>> get_neighbors(int i, int j, int rows, int cols)
 
 //IMPRIMIR el arreglo para ver la animacion
 void print_dist(std::vector<std::vector<char>> grid, bool ruta){
-  usleep(5000);
+  
+  usleep(100000);
   system("clear");
-
+  
   int val;
-
+  
   //imprimir y salir
   for(int i=0;i<grid.size();i++){
     for(int j = 0; j<grid[i].size();j++){
@@ -73,11 +75,13 @@ void dfs(std::pair<int,int>& inicio, std::pair<int,int>& fin,int rows,int cols, 
   
   //indices de la celda en la matriz
   std::stack<std::pair<int,int>> pila;
+  std::set<std::pair<int, int>> visitados;
+
   pila.push(inicio);
 
-  //poner el costo para llegar a ese nodo
-  //marcado como visitado
-  
+  grid[inicio.first][inicio.second] = '1';
+
+  visitados.insert({inicio.first, inicio.second});
   
   while(!pila.empty()){
     
@@ -86,15 +90,7 @@ void dfs(std::pair<int,int>& inicio, std::pair<int,int>& fin,int rows,int cols, 
     int x = node.first;
     int y = node.second;
 
-    grid[inicio.first][inicio.second] = '1';
-    
     pila.pop();
-    
-    //si no ha sido visitado
-    if(grid[x][y] == '0'){
-      //marcar como visitados
-      grid[x][y] = int((grid[x][y]) + 1);
-    }
     
     //obtener posiciones
     //obtener vecinos a partir de x,y dados
@@ -104,11 +100,14 @@ void dfs(std::pair<int,int>& inicio, std::pair<int,int>& fin,int rows,int cols, 
     for (const auto& pair : neighbors) {
       //std::cout << "(" << pair.first << ", " << pair.second << ")";
       //std::cout << " -> " << grid[pair.first][pair.second] << std::endl;
-      
+
       if(grid[pair.first][pair.second] == '0'){
-	//respecto al pasado sumarle uno
-	//grid[pair.first][pair.second] = int((grid[x][y]) + 1);
-	pila.push(pair);
+	if(visitados.count({pair.first,pair.second}) == 0){
+	  //respecto al pasado sumarle uno
+	  grid[pair.first][pair.second] = int((grid[x][y]) + 1);
+	  pila.push(pair);
+	  visitados.insert({pair.first, pair.second});
+	}
       }
       
     }
@@ -116,7 +115,6 @@ void dfs(std::pair<int,int>& inicio, std::pair<int,int>& fin,int rows,int cols, 
     print_dist(grid,false);
   }
 }
-
 
 int main(){
   
@@ -162,7 +160,7 @@ int main(){
   std::cout << fin.first << "," << fin.second << std::endl;
   
   dfs(inicio,fin,rows,cols,grid);
-
+  
   //buscar el camino mas corto
   //revisar con los vecinos
   
