@@ -5,7 +5,6 @@
 #include <unistd.h>
 #include <string>
 #include <stack>
-
 #include <list>
 #include <set>
 
@@ -28,7 +27,7 @@ std::vector<std::pair<int, int>> get_neighbors(int i, int j, int rows, int cols)
 //IMPRIMIR el arreglo para ver la animacion
 void print_dist(std::vector<std::vector<char>> grid, bool ruta){
   
-  usleep(100000);
+  usleep(50000);
   system("clear");
   
   int val;
@@ -40,6 +39,7 @@ void print_dist(std::vector<std::vector<char>> grid, bool ruta){
       if (val == -13){
 	std::cout << "  # ";
       }else{
+
 	if(ruta){
 	  if(std::to_string(val).length()==1){
 	    if(val == 0){
@@ -63,6 +63,7 @@ void print_dist(std::vector<std::vector<char>> grid, bool ruta){
 	}
       }
     }
+    
     std::cout<<std::endl;
   }
 }
@@ -81,7 +82,7 @@ void dfs(std::pair<int,int>& inicio, std::pair<int,int>& fin,int rows,int cols, 
 
   grid[inicio.first][inicio.second] = '1';
 
-  visitados.insert({inicio.first, inicio.second});
+  visitados.insert(inicio);
   
   while(!pila.empty()){
     
@@ -100,13 +101,13 @@ void dfs(std::pair<int,int>& inicio, std::pair<int,int>& fin,int rows,int cols, 
     for (const auto& pair : neighbors) {
       //std::cout << "(" << pair.first << ", " << pair.second << ")";
       //std::cout << " -> " << grid[pair.first][pair.second] << std::endl;
-
+      
       if(grid[pair.first][pair.second] == '0'){
-	if(visitados.count({pair.first,pair.second}) == 0){
+	if(visitados.count(pair) == 0){
 	  //respecto al pasado sumarle uno
-	  grid[pair.first][pair.second] = int((grid[x][y]) + 1);
+	  grid[pair.first][pair.second] = static_cast<char>(int(grid[x][y]) + 1);
 	  pila.push(pair);
-	  visitados.insert({pair.first, pair.second});
+	  visitados.insert(pair);
 	}
       }
       
@@ -164,7 +165,7 @@ int main(){
   //buscar el camino mas corto
   //revisar con los vecinos
   
-  if(grid[fin_x][fin_y]-'0' == 0 ){
+  if(grid[fin_x][fin_y]-'0' == 0 || grid[fin_x][fin_y]-'#' == 0){
     std::cout << "no solucion" << std::endl;
   }else{
 
