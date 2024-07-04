@@ -22,7 +22,7 @@ std::vector<std::pair<int, int>> get_neighbors(int i, int j, int rows, int cols)
 
 //IMPRIMIR el arreglo para ver la animacion
 void print_dist(std::vector<std::vector<char>> grid, bool ruta){
-  usleep(8000);
+  usleep(50000);
   system("clear");
   int val;
   //imprimir y salir
