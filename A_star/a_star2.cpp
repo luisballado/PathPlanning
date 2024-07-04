@@ -5,8 +5,21 @@
 #include <unistd.h>
 #include <string>
 #include <stack>
+
 #include <list>
 #include <set>
+
+class Nodo{
+
+public:
+  int g;
+  int f;
+  std::pair<int,int> nodo;
+
+  double 
+  
+}
+
 
 //Programa DFS con uso directo de la representacion de la matriz
 
@@ -27,7 +40,7 @@ std::vector<std::pair<int, int>> get_neighbors(int i, int j, int rows, int cols)
 //IMPRIMIR el arreglo para ver la animacion
 void print_dist(std::vector<std::vector<char>> grid, bool ruta){
   
-  usleep(50000);
+  usleep(100000);
   system("clear");
   
   int val;
@@ -39,7 +52,6 @@ void print_dist(std::vector<std::vector<char>> grid, bool ruta){
       if (val == -13){
 	std::cout << "  # ";
       }else{
-
 	if(ruta){
 	  if(std::to_string(val).length()==1){
 	    if(val == 0){
@@ -63,7 +75,6 @@ void print_dist(std::vector<std::vector<char>> grid, bool ruta){
 	}
       }
     }
-    
     std::cout<<std::endl;
   }
 }
@@ -71,8 +82,24 @@ void print_dist(std::vector<std::vector<char>> grid, bool ruta){
 //toma una coordenada de inicio
 //toma una coordenada de fin
 
+//distancia entre dos puntos
+double heuristica(std::pair<int,int>& inicio, std::pair<int,int>& fin){
+  return std::sqrt(std::pow((fin.first - inicio.first), 2) + std::pow((fin.second - inicio.second), 2));
+}
+
 //no se mantiene una lista de visitados ya que se actualiza el valor en el grid con la distancia
-void dfs(std::pair<int,int>& inicio, std::pair<int,int>& fin,int rows,int cols, std::vector<std::vector<char>> &grid){
+void a_star(std::pair<int,int>& inicio, std::pair<int,int>& fin,int rows,int cols, std::vector<std::vector<char>> &grid){
+
+  //se mantienen dos listas Abierta y Cerrada
+  //Abierta consiste en nodos que han sido visitados, pero no expandidos (No han sido explorados) - Es la lista de trabajos pendientes
+  std::queue<std::pair<int,int>> abierta;
+  
+  //Cerrados consiste en nodos que han sido visitados y explorados (sucesores que han sido explorados e incluidos a la lista abierta)
+  std::queue<std::pair<int,int>> cerrada;
+
+  //agregar el nodo inicio
+  abierta.push(inicio);
+
   
   //indices de la celda en la matriz
   std::stack<std::pair<int,int>> pila;
@@ -82,7 +109,7 @@ void dfs(std::pair<int,int>& inicio, std::pair<int,int>& fin,int rows,int cols, 
   
   grid[inicio.first][inicio.second] = '1';
 
-  visitados.insert(inicio);
+  visitados.insert({inicio.first, inicio.second});
   
   while(!pila.empty()){
     
@@ -101,13 +128,13 @@ void dfs(std::pair<int,int>& inicio, std::pair<int,int>& fin,int rows,int cols, 
     for (const auto& pair : neighbors) {
       //std::cout << "(" << pair.first << ", " << pair.second << ")";
       //std::cout << " -> " << grid[pair.first][pair.second] << std::endl;
-      
+
       if(grid[pair.first][pair.second] == '0'){
-	if(visitados.count(pair) == 0){
+	if(visitados.count({pair.first,pair.second}) == 0){
 	  //respecto al pasado sumarle uno
-	  grid[pair.first][pair.second] = static_cast<char>(int(grid[x][y]) + 1);
+	  grid[pair.first][pair.second] = int((grid[x][y]) + 1);
 	  pila.push(pair);
-	  visitados.insert(pair);
+	  visitados.insert({pair.first, pair.second});
 	}
       }
       
@@ -120,7 +147,7 @@ void dfs(std::pair<int,int>& inicio, std::pair<int,int>& fin,int rows,int cols, 
 int main(){
   
   //bool PRINT = false;
-  
+
   int rows;
   int cols;
   int inicio_x,inicio_y;
@@ -165,7 +192,7 @@ int main(){
   //buscar el camino mas corto
   //revisar con los vecinos
   
-  if(grid[fin_x][fin_y]-'0' == 0 || grid[fin_x][fin_y]-'#' == 0){
+  if(grid[fin_x][fin_y]-'0' == 0 ){
     std::cout << "no solucion" << std::endl;
   }else{
 
