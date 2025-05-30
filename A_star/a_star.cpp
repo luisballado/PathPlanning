@@ -27,7 +27,12 @@ public:
   
   //calculo de la distancia
   double h() const{
-    return std::sqrt(std::pow((destino.first - inicio.first), 2) + std::pow((destino.second - inicio.second), 2));
+    //manhatan
+    return fabs(destino.first-inicio.first)+fabs(destino.second-inicio.second);
+    
+    //return 0;
+    //euclideano;
+    //return std::sqrt(std::pow((destino.first - inicio.first), 2) + std::pow((destino.second - inicio.second), 2));
   }
   
   double f() const{
@@ -165,6 +170,8 @@ int main() {
     //si es el objetivo, parar
     if(nodo_analizar.getInicio() == destino){
       std::cout << "Es el destino" << std::endl;
+
+      exit(1);
       
       std::vector<std::pair<int, int>> neighbors;
       
@@ -172,12 +179,12 @@ int main() {
       std::queue<std::pair<int,int>> q_grad;
       std::queue<std::pair<int,int>> _q_;
       
-      q_grad.push(std::make_pair(fin_x,fin_y));
-      _q_.push(std::make_pair(fin_x,fin_y));
+      q_grad.push(destino);
+      _q_.push(destino);
       
       int _max_ = 10000;
       std::pair<int,int> max_pair;
-      max_pair = std::make_pair(fin_x,fin_y);
+      max_pair = destino;
       
       while(!q_grad.empty()){
 	
@@ -218,7 +225,7 @@ int main() {
       
       return 1;
     }
-        
+    
     //obtener vecinos
     int x = nodo_analizar.getInicio().first;
     int y = nodo_analizar.getInicio().second;
@@ -231,7 +238,7 @@ int main() {
       if(grid[pair.first][pair.second] == '0'){
 	//std::cout << "(" << pair.first << ", " << pair.second << ")";
 	//std::cout << " -> " << grid[pair.first][pair.second] << std::endl;
-	int costo = 0;
+	int costo = 1;
 	Nodo nodo_vecino(pair,destino,costo);
 	
 	grid[pair.first][pair.second] = static_cast<char>(int(grid[x][y]) + 1);
@@ -239,13 +246,8 @@ int main() {
       }
       
     }
-    print_dist(grid,false);
-    //Agregar los nodos
-    //std::pair<int, int> inicio = std::make_pair(1,1);
-    //int costo = 0;
 
-    
-    
+    print_dist(grid,false);
     
   }
 
