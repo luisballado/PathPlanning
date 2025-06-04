@@ -1,0 +1,16 @@
+import pytransform3d.visualizer as pv
+import numpy as np
+
+fig = pv.figure()
+
+fig.plot_transform(np.eye(4),s=0.3)
+
+fig.plot_graph(urdf_transform_manager,
+               "ur5_base_link",
+               show_collision_objects=True,
+               show_frames=True)
+
+pv.Trajectory(trajectory).add_artist(fig)
+
+fig.view_init()
+fig.show()

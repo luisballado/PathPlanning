@@ -1,0 +1,9 @@
+import matplotlib.pyplot as plt
+
+from pytransform3d.plot_utils import make_3d_axis
+from pytransform3d.transformations import plot_transform
+
+ax = make_3d_axis(ax_s=1, unit="m", n_ticks=6)
+plot_transform(ax=ax)
+plt.tight_layout()
+plt.show()

@@ -1,0 +1,42 @@
+from scipy.interpolate import make_interp_spline
+
+# Puntos de control para la trayectoria (puedes modificarlos)
+control_points = np.array([
+    [0, 10, 2],
+    [2, 9, 2.5],
+    [4, 8, 3],
+    [6, 7, 2.5],
+    [8, 6, 2],
+    [10, 5, 2]
+])
+
+# Crear curva B-spline con interpolación suave
+num_points = 200
+t = np.linspace(0, 1, len(control_points))
+spline = make_interp_spline(t, control_points, k=3)
+t_fine = np.linspace(0, 1, num_points)
+spline_points = spline(t_fine)
+
+# Graficar la trayectoria B-spline
+fig = plt.figure(figsize=(8, 6))
+ax = fig.add_subplot(111, projection='3d')
+ax.set_title("Trayectoria de un VANT usando B-Spline")
+
+# Curva B-spline (suave)
+ax.plot(spline_points[:, 0], spline_points[:, 1], spline_points[:, 2], 'r-', label='B-Spline')
+
+# Puntos de control
+ax.plot(control_points[:, 0], control_points[:, 1], control_points[:, 2], 'bo--', label='Puntos de control')
+
+# Posición inicial del VANT
+ax.scatter(*control_points[0], color='green', s=100, label='Inicio')
+ax.scatter(*control_points[-1], color='black', s=100, label='Fin')
+
+# Configuración de la gráfica
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_zlabel('Z')
+ax.legend()
+ax.view_init(elev=30, azim=135)
+plt.tight_layout()
+plt.show()

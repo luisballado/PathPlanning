@@ -1,0 +1,100 @@
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.animation as animation
+import numpy as np
+from scipy.interpolate import splprep, splev
+
+# Step 1: Clickable interface to define trajectory
+clicked_points = []
+
+def onclick(event):
+    if event.inaxes and event.button == 1:  # Left click
+        x2, y2 = event.xdata, event.ydata
+        # Assign Z based on key modifier
+        z2 = 1
+        if event.key == 'shift':
+            z2 = 2
+        elif event.key == 'control':
+            z2 = 4
+        clicked_points.append((x2, y2, z2))
+        ax.scatter(x2, y2, z2, color='red')
+        fig.canvas.draw()
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.set_title("Click to define trajectory (Shift=Z2, Ctrl=Z4) — Close window when done")
+ax.set_xlim(0, 5)
+ax.set_ylim(0, 5)
+ax.set_zlim(0, 5)
+
+cid = fig.canvas.mpl_connect('button_press_event', onclick)
+plt.show()
+
+if len(clicked_points) < 2:
+    raise ValueError("You must click at least two points.")
+
+# Step 2: Interpolate trajectory with B-spline
+clicked_points = np.array(clicked_points).T
+tck, u = splprep(clicked_points, s=0)
+u_fine = np.linspace(0, 1, 60)
+x_vals, y_vals, z_vals = splev(u_fine, tck)
+trajectory_points = np.vstack((x_vals, y_vals, z_vals)).T
+directions = np.gradient(trajectory_points, axis=0)
+directions = np.array([v / np.linalg.norm(v) for v in directions])
+
+# Step 3: Animation
+fig = plt.figure(figsize=(8, 6))
+ax = fig.add_subplot(111, projection='3d')
+
+def draw_frame(ax, origin, R, label, color, length=0.3):
+    axes = R @ np.eye(3) * length
+    for i, (c, axis) in enumerate(zip(color, ['x', 'y', 'z'])):
+        ax.quiver(*origin, *axes[:, i], color=c, linewidth=2)
+        ax.text(*(origin + axes[:, i]), f"{axis}_{label}", color=c)
+
+def draw_fov(ax, origin, direction, length=0.6, angle=np.pi/10):
+    direction = direction / np.linalg.norm(direction)
+    up = np.array([0, 0, 1]) if abs(direction[2]) < 0.95 else np.array([0, 1, 0])
+    right = np.cross(direction, up)
+    up = np.cross(right, direction)
+    right /= np.linalg.norm(right)
+    up /= np.linalg.norm(up)
+    for theta in np.linspace(-angle, angle, 5):
+        for phi in np.linspace(-angle, angle, 5):
+            offset = direction + np.tan(theta) * right + np.tan(phi) * up
+            offset = offset / np.linalg.norm(offset) * length
+            ax.plot([origin[0], origin[0] + offset[0]],
+                    [origin[1], origin[1] + offset[1]],
+                    [origin[2], origin[2] + offset[2]],
+                    color='orange', alpha=0.6)
+
+def update_frame(i):
+    ax.cla()
+    ax.set_xlim(0, 5)
+    ax.set_ylim(0, 5)
+    ax.set_zlim(0, 5)
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    ax.set_title('Drone Following Custom 3D Trajectory with FOV')
+
+    ax.plot(x_vals, y_vals, z_vals, 'gray', linewidth=1, linestyle='--')
+    position = trajectory_points[i]
+    direction = directions[i]
+    x_axis = direction
+    up_ref = np.array([0, 0, 1]) if abs(direction[2]) < 0.95 else np.array([0, 1, 0])
+    y_axis = np.cross(up_ref, x_axis)
+    z_axis = np.cross(x_axis, y_axis)
+    y_axis /= np.linalg.norm(y_axis)
+    z_axis /= np.linalg.norm(z_axis)
+    R = np.vstack((x_axis, y_axis, z_axis)).T
+
+    draw_frame(ax, position, R, 'b', ['red', 'green', 'blue'])
+    draw_fov(ax, position, direction)
+
+ani = animation.FuncAnimation(fig, update_frame, frames=len(x_vals), interval=100)
+
+output_path = 'ddrone_custom_3d_trajectory.mp4'
+ani.save(output_path, fps=10, extra_args=['-vcodec', 'libx264'])
+plt.close(fig)
+output_path

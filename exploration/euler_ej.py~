@@ -1,0 +1,35 @@
+import numpy as np
+import pytransform3d.visualizer as pv
+import pytransform3d.rotations as pr # Import the rotations module
+
+fig = pv.figure()
+fig.plot_sphere(radius=0.5)
+
+# 1. Initial state (no rotation)
+fig.plot_transform(A2B=np.eye(4), s=0.5, label="Initial") # s is scale for axis, label for legend
+
+# 2. Example of a rotation using Euler angles (ZYX convention)
+# Let's define some Euler angles (in radians)
+yaw = np.deg2rad(45)   # Rotate 45 degrees around Z-axis
+pitch = np.deg2rad(30) # Rotate 30 degrees around Y-axis
+roll = np.deg2rad(60)  # Rotate 60 degrees around X-axis
+
+# Create a rotation matrix from Euler angles (ZYX convention)
+# The order of parameters here is roll, pitch, yaw (X, Y, Z) for the R_x(phi)R_y(theta)R_z(psi) multiplication
+# but the axes are applied in ZYX order from right to left (Z then Y then X)
+R_zyx = pr.euler_angles_to_matrix(roll, pitch, yaw, "sxyz") # "sxyz" for static X, Y, Z (equivalent to intrinsic ZYX)
+
+# Create a full homogeneous transformation matrix (no translation for now)
+A2B_rotated = np.eye(4)
+A2B_rotated[:3, :3] = R_zyx
+
+# Plot the rotated coordinate system
+fig.plot_transform(A2B=A2B_rotated, s=0.5, label="Rotated (ZYX Euler)")
+
+# Add a legend
+fig.add_legend()
+
+if "__file__" in globals():
+    fig.show()
+else:
+    fig.save_image("__open3d_rendered_image_euler.jpg")
