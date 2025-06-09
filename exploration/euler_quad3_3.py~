@@ -1,0 +1,92 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.animation import FuncAnimation
+
+# === Helical Trajectory ===
+n_points = 300
+radius = 1.0
+height = 2.0
+turns = 2
+
+theta = np.linspace(0, 2 * np.pi * turns, n_points)
+x_vals = radius * np.cos(theta)
+y_vals = radius * np.sin(theta)
+z_vals = height * theta / (2 * np.pi * turns)
+
+# === Shift to start at origin ===
+x_vals -= x_vals[0]
+y_vals -= y_vals[0]
+z_vals -= z_vals[0]
+
+trajectory_points = np.vstack((x_vals, y_vals, z_vals)).T
+directions = np.gradient(trajectory_points, axis=0)
+directions = np.array([v / np.linalg.norm(v) for v in directions])
+
+# === Plot setup ===
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+
+def draw_basis(ax, R, pos, length=0.2):
+    colors = ['r', 'g', 'b']
+    for i in range(3):
+        axis = R[:, i] * length
+        ax.quiver(*pos, *axis, color=colors[i], linewidth=2)
+
+def draw_fov(ax, origin, direction, angle=np.pi/10, length=0.4):
+    direction = direction / np.linalg.norm(direction)
+    up = np.array([0, 0, 1]) if abs(direction[2]) < 0.95 else np.array([0, 1, 0])
+    right = np.cross(direction, up)
+    up = np.cross(right, direction)
+    right /= np.linalg.norm(right)
+    up /= np.linalg.norm(up)
+
+    for theta in np.linspace(-angle, angle, 4):
+        for phi in np.linspace(-angle, angle, 4):
+            offset = direction + np.tan(theta) * right + np.tan(phi) * up
+            offset = offset / np.linalg.norm(offset) * length
+            ax.plot(
+                [origin[0], origin[0] + offset[0]],
+                [origin[1], origin[1] + offset[1]],
+                [origin[2], origin[2] + offset[2]],
+                color='orange', alpha=0.6
+            )
+
+def update(i):
+    ax.cla()
+    ax.set_xlim(-1.5, 1.5)
+    ax.set_ylim(-1.5, 1.5)
+    ax.set_zlim(0, 2.5)
+    ax.set_xlabel("X")
+    ax.set_ylabel("Y")
+    ax.set_zlabel("Z")
+    ax.set_title("3D Helical Quadrotor with Tilt and FOV")
+
+    # === Draw inertial frame at the origin ===
+    origin_inertial = np.array([0, 0, 0])
+    R_inertial = np.eye(3)
+    draw_basis(ax, R_inertial, origin_inertial, length=0.3)
+    
+    
+    # Draw trajectory
+    ax.plot(x_vals, y_vals, z_vals, 'gray', linestyle='--')
+
+    pos = trajectory_points[i]
+    x_axis = directions[i]
+
+    # Compute tilted orientation: X = velocity, Z = "up" in world frame
+    up_world = np.array([0, 0, 1])
+    y_axis = np.cross(up_world, x_axis)
+    if np.linalg.norm(y_axis) < 1e-3:
+        y_axis = np.array([0, 1, 0])  # fallback
+    y_axis /= np.linalg.norm(y_axis)
+    z_axis = np.cross(x_axis, y_axis)
+    R = np.vstack((x_axis, y_axis, z_axis)).T
+
+    draw_basis(ax, R, pos)
+    draw_fov(ax, pos, x_axis)
+    ax.scatter(*pos, color='black', s=40)
+
+# === Animate ===
+ani = FuncAnimation(fig, update, frames=len(trajectory_points), interval=50, repeat=True)
+plt.show()

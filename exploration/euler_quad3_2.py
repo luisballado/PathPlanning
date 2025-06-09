@@ -1,0 +1,98 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.animation import FuncAnimation
+
+# === Parámetros físicos ===
+mass = 5.0  # kg
+g = 9.81    # m/s^2
+dt = 0.05   # time step (s)
+
+# === Estado del quadrotor ===
+pos = np.array([0.0, 0.0, 0.0])     # posición en el mundo
+vel = np.zeros(3)                  # velocidad lineal
+R = np.eye(3)                      # orientación (rotación del cuerpo al mundo)
+
+# === Control de actitud (roll, pitch, yaw deseados) ===
+attitude_cmd = np.array([0.0, 0.0, 0.0])  # [roll, pitch, yaw] en rad
+
+# === PID para posición ===
+target_pos = np.array([3.0, -2.0, 2.0])  # referencia deseada
+integral_error = np.zeros(3)
+prev_error = np.zeros(3)
+
+# PID gains
+Kp = np.array([1.5, 1.5, 2.5])
+Ki = np.array([0.0, 0.0, 0.0])
+Kd = np.array([0.8, 0.8, 1.0])
+
+# === Visual ===
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+plt.subplots_adjust(bottom=0.1)
+basis_lines = []
+
+def draw_basis(ax, R, pos, length=0.3):
+    colors = ['r', 'g', 'b']
+    for i in range(3):
+        axis = R[:, i] * length
+        ax.quiver(*pos, *axis, color=colors[i], linewidth=2)
+
+def pid_controller(pos, vel, dt):
+    global integral_error, prev_error
+    error = target_pos - pos
+    integral_error += error * dt
+    derivative = (error - prev_error) / dt
+    prev_error = error
+    control = Kp * error + Ki * integral_error + Kd * derivative
+    return control
+
+def update(i):
+    global pos, vel, R
+
+    ax.cla()
+    ax.set_xlim(-2, 2)
+    ax.set_ylim(-2, 2)
+    ax.set_zlim(0, 3)
+    ax.set_xlabel("X")
+    ax.set_ylabel("Y")
+    ax.set_zlabel("Z")
+    ax.set_title("Quadrotor Dynamic Simulation (PID)")
+
+    # === CONTROL ===
+    acc_cmd = pid_controller(pos, vel, dt)
+
+    # Limit max acceleration
+    acc_cmd = np.clip(acc_cmd, -10, 10)
+
+    # Actitud fija al "mirar hacia arriba", ajustada según aceleración
+    # Simplificación: queremos que thrust compense acc_cmd + gravedad
+    total_acc = acc_cmd + np.array([0, 0, g])
+    thrust_direction = total_acc / np.linalg.norm(total_acc)
+    R[:, 2] = thrust_direction
+
+    # Estimar orientación completa: z = thrust, x = arbitrario, y = ortogonal
+    x_ref = np.array([1.0, 0.0, 0.0])
+    if abs(np.dot(R[:, 2], x_ref)) > 0.95:
+        x_ref = np.array([0.0, 1.0, 0.0])
+    R[:, 0] = np.cross(R[:, 1], R[:, 2])
+    R[:, 0] /= np.linalg.norm(R[:, 0])
+    R[:, 1] = np.cross(R[:, 2], R[:, 0])
+    R[:, 1] /= np.linalg.norm(R[:, 1])
+
+    # === DINÁMICA ===
+    # Aceleración total
+    thrust = np.linalg.norm(total_acc) * mass
+    a = R[:, 2] * (thrust / mass) - np.array([0, 0, g])
+    vel += a * dt
+    pos += vel * dt
+
+    # === VISUALIZACIÓN ===
+    draw_basis(ax, R, pos)
+    ax.scatter(*pos, color='k', label='Quadrotor')
+    ax.scatter(*target_pos, color='orange', label='Target', s=50)
+    ax.legend()
+
+# === Animación ===
+ani = FuncAnimation(fig, update, frames=300, interval=dt * 1000)
+plt.show()

@@ -1,0 +1,57 @@
+import numpy as np
+import pytransform3d.visualizer as pv
+from pytransform3d.rotations import passive_matrix_from_angle, R_id
+from pytransform3d.transformations import transform_from, concat
+
+n_frames = 360
+frames_per_phase = n_frames // 3
+
+fig = pv.figure()
+
+# Base móvil
+handle = fig.plot_basis(R=R_id, p=[0, 0, 0], s=0.4)
+
+# Etiquetas de los ejes (iniciales)
+text_x = fig.plot_text("X", [0.6, 0, 0], text_size=20)
+text_y = fig.plot_text("Y", [0, 0.6, 0], text_size=20)
+text_z = fig.plot_text("Z", [0, 0, 0.6], text_size=20)
+
+# Función de actualización
+def update_sequential_rotation(step, n_frames, handle, text_x, text_y, text_z):
+    # Construcción secuencial de rotación
+    if step < frames_per_phase:
+        angle_x = 2 * np.pi * (step / frames_per_phase)
+        R = passive_matrix_from_angle(0, angle_x)
+    elif step < 2 * frames_per_phase:
+        angle_y = 2 * np.pi * ((step - frames_per_phase) / frames_per_phase)
+        R_x = passive_matrix_from_angle(0, 2 * np.pi)
+        R_y = passive_matrix_from_angle(1, angle_y)
+        R = R_y @ R_x
+    else:
+        angle_z = 2 * np.pi * ((step - 2 * frames_per_phase) / frames_per_phase)
+        R_x = passive_matrix_from_angle(0, 2 * np.pi)
+        R_y = passive_matrix_from_angle(1, 2 * np.pi)
+        R_z = passive_matrix_from_angle(2, angle_z)
+        R = R_z @ R_y @ R_x
+
+    # Actualizar base
+    T = transform_from(R=R, p=[0, 0, 0])
+    handle.set_data(T)
+
+    # Actualizar posiciones de los textos según los ejes rotados
+    text_x.set_data(R[:, 0] * 0.6)  # Eje X rotado
+    text_y.set_data(R[:, 1] * 0.6)  # Eje Y rotado
+    text_z.set_data(R[:, 2] * 0.6)  # Eje Z rotado
+
+    return handle
+
+# Mostrar animación
+fig.view_init()
+fig.set_zoom(0.8)
+fig.animate(
+    update_sequential_rotation,
+    n_frames=n_frames,
+    fargs=(n_frames, handle, text_x, text_y, text_z),
+    loop=True
+)
+fig.show()

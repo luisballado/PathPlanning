@@ -1,0 +1,118 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.animation import FuncAnimation
+
+# Simulation parameters
+dt = 0.05  # time step
+n_steps = 300
+mass = 1.0  # kg
+g = 9.81  # m/s^2
+gravity = np.array([0, 0, -g])
+Kp = np.array([5.0, 5.0, 8.0])
+Kd = np.array([3.0, 3.0, 5.0])
+
+# Trajectory: Helical upward
+theta = np.linspace(0, 2 * np.pi * 2, n_steps)
+radius = 1.0
+z_traj = np.linspace(0, 2, n_steps)
+x_traj = radius * np.cos(theta)
+y_traj = radius * np.sin(theta)
+trajectory = np.vstack((x_traj, y_traj, z_traj)).T
+
+# Initial conditions
+pos = np.array([0.0, 0.0, 0.0])
+vel = np.zeros(3)
+
+positions = [pos.copy()]
+orientations = []
+
+# Simulation loop
+for i in range(n_steps):
+    target_pos = trajectory[i]
+    error = target_pos - pos
+    d_error = -vel
+
+    # PD control for acceleration command
+    acc_cmd = Kp * error + Kd * d_error + gravity
+
+    # Update physics
+    vel += acc_cmd * dt
+    pos += vel * dt
+
+    positions.append(pos.copy())
+
+    # Orientation (z-axis aligned with thrust)
+    z_axis = acc_cmd / (np.linalg.norm(acc_cmd) + 1e-6)
+    x_ref = np.array([1.0, 0.0, 0.0])
+    if abs(np.dot(z_axis, x_ref)) > 0.95:
+        x_ref = np.array([0.0, 1.0, 0.0])
+    y_axis = np.cross(z_axis, x_ref)
+    y_axis /= np.linalg.norm(y_axis)
+    x_axis = np.cross(y_axis, z_axis)
+    R = np.vstack((x_axis, y_axis, z_axis)).T
+    orientations.append(R)
+
+# Convert results to arrays
+positions = np.array(positions)
+orientations = np.array(orientations)
+
+# Visualization
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+
+def draw_quadrotor(ax, R, pos, arm_length=0.2):
+    # Offset de rotores en marco cuerpo
+    d = arm_length / np.sqrt(2)
+    offsets = np.array([
+        [ d,  d, 0],
+        [-d,  d, 0],
+        [-d, -d, 0],
+        [ d, -d, 0]
+    ])
+
+    # Transformar a mundo
+    rotor_positions = [pos + R @ offset for offset in offsets]
+
+    # Dibujar brazos
+    for rotor_pos in rotor_positions:
+        ax.plot([pos[0], rotor_pos[0]],
+                [pos[1], rotor_pos[1]],
+                [pos[2], rotor_pos[2]],
+                color='k', linewidth=2)
+
+    # Dibujar rotores
+    for rotor_pos in rotor_positions:
+        ax.scatter(*rotor_pos, color='purple', s=30)
+
+
+def draw_basis(ax, R, pos, length=0.2):
+    colors = ['r', 'g', 'b']
+    for i in range(3):
+        axis = R[:, i] * length
+        ax.quiver(*pos, *axis, color=colors[i], linewidth=2)
+
+def update(frame):
+    ax.cla()
+    ax.set_xlim(-1.5, 1.5)
+    ax.set_ylim(-1.5, 1.5)
+    ax.set_zlim(0, 2.5)
+    ax.set_title("Dynamic Quadrotor Simulation (with PD + gravity)")
+    ax.set_xlabel("X")
+    ax.set_ylabel("Y")
+    ax.set_zlabel("Z")
+
+    # Plot trajectory
+    ax.plot(trajectory[:, 0], trajectory[:, 1], trajectory[:, 2], 'gray', linestyle='--')
+    ax.plot(positions[:frame, 0], positions[:frame, 1], positions[:frame, 2], 'b-')
+
+    # Plot current frame
+    pos = positions[frame]
+    R = orientations[frame]
+    draw_quadrotor(ax, R, pos)
+    draw_basis(ax, R, pos)
+    ax.scatter(*pos, color='black', s=30)
+
+ani = FuncAnimation(fig, update, frames=n_steps, interval=50, repeat=True)
+plt.show()
+
